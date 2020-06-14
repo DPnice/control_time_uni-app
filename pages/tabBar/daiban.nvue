@@ -1,0 +1,496 @@
+<template>
+	<view>
+
+		<uni-section :title="date+text" type="line">
+			<picker style="width: 50rpx;height: 50rpx;" mode="date" :value="date" :start="startDate" :end="endDate" @change="bindDateChange">
+				<image style="width: 50rpx;height: 50rpx;" src="../../static/guolv.png" mode=""></image>
+			</picker>
+		</uni-section>
+
+		<uni-swipe-action>
+			<uni-swipe-action-item v-for="(item,index) in swipeList" :options="item.options" :key="item.id" @change="swipeChange"
+			 @click="swipeClickItem($event,item)">
+				<uni-tag v-if="item.status === '0'" :mark="true" text="完成啦" type="success" size="small" />
+				<uni-tag v-if="item.status === '1'" :mark="true" text="进行中" type="primary" size="small" />
+				<text class="cont">{{item.content}}</text>
+				<uni-tag v-if="item.top === '0'" text="置顶" type="error" size="normal" />
+			</uni-swipe-action-item>
+		</uni-swipe-action>
+
+		<uni-fab ref="fab" :pattern="pattern" :horizontal='horizontal' :content="content" :popMenu="true" @trigger="trigger"
+		 @fabClick="fabClick" />
+
+		<!-- 遮罩 -->
+		<uni-transition :mode-class="['fade']" :styles="maskClass" :show="show" />
+
+		<navigator v-if="needLogin" url="/pages/tabBar/wode" open-type="switchTab" hover-class="other-navigator-hover">
+			<button type="default">前往登录>>></button>
+		</navigator>
+		<!-- 过渡 -->
+		<uni-transition :duration="300" :mode-class="modeClass" :styles="transfromClass" :show="transShow" @change="change">
+			<view class="uni-form-item uni-column">
+
+				<view class="uni-input-wrapper">
+					<input class="uni-input" focus placeholder="多个待办项以 ; 分隔" :value="inputClearValue" @input="clearInput" />
+					<text class="uni-icon" v-if="showClearIcon" @click="clearIcon">&#xe434;</text>
+				</view>
+			</view>
+		</uni-transition>
+
+	</view>
+
+</template>
+
+<script>
+	import {
+		AppModel
+	} from '../../models/app.js'
+	const appModel = new AppModel()
+
+	function getDate(type) {
+		const date = new Date();
+
+		let year = date.getFullYear();
+		let month = date.getMonth() + 1;
+		let day = date.getDate();
+
+		if (type === 'start') {
+			year = year - 60;
+		} else if (type === 'end') {
+			year = year + 2;
+		}
+		month = month > 9 ? month : '0' + month;;
+		day = day > 9 ? day : '0' + day;
+
+		return `${year}-${month}-${day}`;
+	}
+
+	import uniIcons from "../../components/uni-icons/uni-icons.vue"
+	export default {
+		components: {
+			uniIcons
+		},
+		data() {
+			return {
+				date: getDate(),
+				text: " 待办列表",
+				startDate: getDate('start'),
+				endDate: getDate('end'),
+				uuid: "",
+				wxOpenId: "",
+				needLogin: true,
+				inputClearValue: '',
+				showClearIcon: false,
+				transShow: false,
+				modeClass: ['fade'],
+				show: false,
+				maskClass: {
+					'position': 'fixed',
+					'bottom': 0,
+					'top': 0,
+					'left': 0,
+					'right': 0,
+					'background-color': 'rgba(0, 0, 0, 0.4)'
+				},
+				transfromClass: {
+					'position': 'fixed',
+					'bottom': 0,
+					'top': 0,
+					'left': 0,
+					'right': 0,
+					/* #ifndef APP-NVUE */
+					'display': 'flex',
+					/* #endif */
+					'justify-content': 'center',
+					'align-items': 'center'
+				},
+
+				horizontal: 'right',
+				pattern: {
+					color: '#7A7E83',
+					backgroundColor: '#fff',
+					selectedColor: '#007AFF',
+					buttonColor: '#007AFF'
+				},
+				content: [{
+						iconPath: '/static/yes.png',
+						selectedIconPath: '/static/xin.png',
+						text: "",
+						active: false
+					},
+					{
+						iconPath: '/static/good.png',
+						selectedIconPath: '/static/xin.png',
+						text: "",
+						active: false
+					}
+				],
+				swipeList: []
+			}
+		},
+		onLoad() {
+
+		},
+		onShow() {
+			var that = this;
+			uni.getStorage({
+				key: "userInfo",
+				success() {
+					that.wxOpenId = uni.getStorageSync("userInfo").wxOpenId;
+					that.needLogin = false;
+					that.show = false;
+					console.log("登录按钮", that.needLogin)
+					that.getNote(that.date);
+				},
+				fail() {
+					console.log("需要登录")
+					that.needLogin = true;
+					that.show = true;
+				}
+			})
+			console.log('我这个页面显示就会执行');
+		},
+		onHide() {
+			console.log('我这个页面退出的会执行');
+		},
+		methods: {
+			clearInput: function(event) {
+				this.inputClearValue = event.detail.value;
+				if (event.detail.value.length > 0) {
+					this.showClearIcon = true;
+				} else {
+					this.showClearIcon = false;
+				}
+			},
+			clearIcon: function() {
+				this.inputClearValue = '';
+				this.showClearIcon = false;
+			},
+			bindDateChange: function(e) {
+				this.date = e.detail.value
+				console.log("date", e.detail.value)
+				this.getNote(e.detail.value);
+			},
+			getNote(date) {
+				var self = this;
+				var info = uni.getStorageSync("userInfo");
+				if (info !== "" && !this.needLogin) {
+					//请求数据接口
+					appModel.getNote(info.wxOpenId, date,
+						function(redata) {
+							// uni.showToast({
+							// 	title: "同步成功",
+							// 	duration: 1000,
+							// 	image: "/static/yes.png"
+							// })
+							if (redata.data !== "") {
+								self.uuid = redata.data.uuid;
+								self.swipeList = JSON.parse(redata.data.content);
+							} else {
+								self.uuid = ""
+								self.swipeList = []
+							}
+
+						},
+						function(redata) {
+							uni.showToast({
+								title: "同步失败请重试",
+								duration: 1000,
+								image: "/static/no.png"
+							})
+							self.content[e.index].active = false;
+						});
+				}
+			},
+			saveNote() {
+				var self = this;
+				var saveData = {};
+				saveData.content = self.swipeList;
+				saveData.uuid = self.uuid;
+				saveData.wxOpenId = self.wxOpenId;
+
+				appModel.saveNote(saveData,
+					function(redata) {
+						// uni.showToast({
+						// 	title: "同步成功",
+						// 	duration: 1000,
+						// 	image: "/static/yes.png"
+						// })
+						self.uuid = redata.data;
+
+					},
+					function(redata) {
+						uni.showToast({
+							title: "同步失败请重试",
+							duration: 1000,
+							image: "/static/no.png"
+						})
+						self.content[e.index].active = false;
+					});
+			},
+			shortshock() {
+				//震动
+				uni.vibrateShort({
+					success: function() {
+						console.log('success');
+					}
+				});
+			},
+			mask() {
+				this.show = !this.show;
+			},
+			open(mode) {
+				this.modeClass = mode
+				this.transShow = !this.transShow
+			},
+			trigger(e) {
+				//悬浮按钮
+				if (e.index == 0) {
+					if (this.inputClearValue !== "") {
+						//添加 分号分割多条
+						this.content[e.index].active = true;
+						var inputValue = this.inputClearValue;
+
+						var arrayStr = inputValue.split(/[；;]/);
+
+						for (let strIndex in arrayStr) {
+							this.swipeList.push({
+								"status": "1",
+								"id": new Date().getTime() + "_" + strIndex,
+								"options": [{
+									"text": "置顶"
+								}, {
+									"text": "完成",
+									"style": {
+										"backgroundColor": "rgb(254,156,1)"
+									}
+								}, {
+									"text": "删除",
+									"style": {
+										"backgroundColor": "rgb(255,58,49)"
+									}
+								}],
+								"content": arrayStr[strIndex]
+							});
+						}
+						//网络请求更新数据
+						this.inputClearValue = "";
+						this.saveNote();
+						this.content[e.index].active = false;
+					} else {
+						uni.showToast({
+							title: '请填写内容呀',
+							image: "/static/no.png",
+						})
+					}
+
+				} else {
+					this.content[e.index].active = !e.item.active
+				}
+
+			},
+			fabClick() {
+				this.shortshock();
+				if (!this.needLogin) {
+					this.mask();
+					this.open(['slide-top']);
+				}
+			},
+
+			setOpened() {
+				this.isOpened = !this.isOpened
+			},
+			change(e) {
+				this.isOpened = e
+			},
+			swipeChange(e) {
+
+				console.log('滑动状态', e);
+			},
+			swipeClickItem(e, item) {
+				let that = this;
+				let {
+					content
+				} = e
+
+				let id = item.id;
+				var index = that.getIndexById(id);
+				console.log("当前元素id", id);
+				console.log("当前元素内容", item.content);
+
+				if (content.text === '删除') {
+					uni.showModal({
+						confirmText: "✔",
+						cancelText: "❌",
+						title: '提示',
+						content: '是否确认删除',
+						success: (res) => {
+							if (res.confirm) {
+								that.swipeList.splice(index, 1)
+								console.log("当前列表", JSON.stringify(that.swipeList));
+								that.saveNote();
+							} else if (res.cancel) {
+								console.log('用户点击取消');
+							}
+						}
+					});
+
+				} else if (content.text === '置顶') {
+					let jsonObj = that.swipeList[index]
+					jsonObj.id = new Date().getTime() + "";
+					jsonObj.top = "0";
+					jsonObj.options[0].text = "取消";
+					that.swipeList.splice(index, 1);
+					that.swipeList.unshift(jsonObj);
+					this.saveNote();
+				} else if (content.text === '取消') {
+					let jsonObj = that.swipeList[index]
+					jsonObj.id = new Date().getTime() + "";
+					delete jsonObj.top;
+					jsonObj.options[0].text = "置顶";
+					that.swipeList.splice(index, 1);
+					that.swipeList.push(jsonObj);
+					this.saveNote();
+				} else if (content.text === '完成') {
+					let jsonObj = that.swipeList[index]
+					jsonObj.id = new Date().getTime() + "";
+					jsonObj.options[1].text = "未完成";
+					jsonObj.status = "0";
+					that.swipeList.splice(index, 1);
+					that.swipeList.push(jsonObj);
+					//小组成员添加 积分
+					this.saveNote();
+					this.plus()
+				} else if (content.text === '未完成') {
+					let jsonObj = that.swipeList[index]
+					jsonObj.id = new Date().getTime() + "";
+					jsonObj.options[1].text = "完成";
+					jsonObj.status = "1";
+					//小组成员减去 积分
+					this.saveNote();
+					this.reduce()
+				} else {
+					uni.showToast({
+						title: `点击了${e.content.text}按钮`,
+						icon: 'none'
+					})
+				}
+				// console.log("当前列表", JSON.stringify(this.swipeList));
+			},
+			plus() {
+				var groupUuid = uni.getStorageSync("userInfo").groupUuid
+				if (groupUuid !== "") {
+					appModel.plus(this.wxOpenId,
+						function(redata) {},
+						function(redata) {});
+				}
+
+			},
+			reduce() {
+				var groupUuid = uni.getStorageSync("userInfo").groupUuid
+				if (groupUuid !== "") {
+					appModel.reduce(this.wxOpenId,
+						function(redata) {},
+						function(redata) {});
+				}
+
+			},
+			getIndexById(id) {
+				for (var i = 0; i < this.swipeList.length; i++) {
+					if (this.swipeList[i].id == id) return i;
+				}
+				return -1;
+			}
+		}
+	}
+</script>
+
+<style>
+	/* 头条小程序组件内不能引入字体 */
+	/* #ifdef MP-TOUTIAO */
+	@font-face {
+		font-family: uniicons;
+		font-weight: normal;
+		font-style: normal;
+		src: url('~@/static/uni.ttf') format('truetype');
+	}
+
+	/* #endif */
+
+	page {
+		display: flex;
+		flex-direction: column;
+		box-sizing: border-box;
+		/* background-color: #efeff4; */
+		min-height: 100%;
+		height: auto;
+	}
+
+	view {
+		font-size: 14px;
+		line-height: inherit;
+	}
+
+	.cont {
+		flex: 1;
+		height: 45px;
+		line-height: 45px;
+		padding: 0 15px;
+		position: relative;
+		background-color: #fff;
+		font-size: 15px;
+		border-bottom-color: #F5F5F5;
+		border-bottom-width: 1px;
+		border-bottom-style: solid;
+	}
+
+
+	.button {
+		border-color: #e5e5e5;
+		border-style: solid;
+		border-width: 1px;
+		padding: 4px 8px;
+		border-radius: 4px;
+	}
+
+	.button-text {
+		font-size: 15px;
+	}
+
+	.uni-input-wrapper {
+		box-shadow: inset 0px 1px 1px rgba(0, 0, 0, 0.075), 0px 0px 10px rgba(0, 0, 0, 0.4);
+		border: 1px solid #eee;
+		border-radius: 55px;
+		width: 300px;
+		/* #ifndef APP-NVUE */
+		display: flex;
+		/* #endif */
+		padding: 8px 13px;
+		flex-direction: row;
+		flex-wrap: nowrap;
+		background-color: #FFFFFF;
+	}
+
+	.uni-input {
+		border: 1px solid #eee;
+		border-radius: 15px;
+		height: 50px;
+		line-height: 28px;
+		font-size: 20px;
+		padding: 0px;
+		flex: 1;
+		background-color: #FFFFFF;
+	}
+
+	.uni-icon {
+		margin-left: 10rpx;
+		margin-top: 10rpx;
+		font-family: uniicons;
+		font-size: 24px;
+		font-weight: normal;
+		font-style: normal;
+		width: 24px;
+		height: 24px;
+		color: #999999;
+	}
+</style>

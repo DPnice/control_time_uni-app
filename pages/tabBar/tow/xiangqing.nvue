@@ -1,0 +1,171 @@
+<template>
+	<view>
+		<uni-section :title="nickName+text" type="line"></uni-section>
+
+		<uni-swipe-action>
+			<uni-swipe-action-item v-for="(item,index) in swipeList" :options="item.options" :key="item.id" 
+			 @click="swipeClickItem($event,item)">
+				<uni-tag v-if="item.status === '0'" :mark="true" text="完成啦" type="success" size="small" />
+				<uni-tag v-if="item.status === '1'" :mark="true" text="进行中" type="primary" size="small" />
+				<text class="cont">{{item.content}}</text>
+				<uni-tag v-if="item.top === '0'" text="置顶" type="error" size="normal" />
+			</uni-swipe-action-item>
+		</uni-swipe-action>
+	</view>
+
+</template>
+<script>
+	import {
+		AppModel
+	} from '../../../models/app.js'
+	const appModel = new AppModel()
+
+	export default {
+		data() {
+			return {
+				wxOpenId: "",
+				nickName: "",
+				text: "的今日待办",
+				swipeList: []
+			}
+		},
+		onLoad(e) {
+			console.log("页面参数", e)
+			// if (e.wxOpenId) {
+				this.wxOpenId = e.wxOpenId;
+				this.nickName = e.nickName;
+				this.getNote("")
+			// }
+		},
+		methods: {
+			swipeClickItem(e,item){
+				uni.showToast({
+					title: "不能修改",
+					duration: 1000,
+					icon:"none"
+				})
+			},
+			getNote(date) {
+				var self = this;
+				var info = uni.getStorageSync("userInfo");
+				if (info !== "") {
+					//请求数据接口
+					appModel.getNote(self.wxOpenId, date,
+						function(redata) {
+							if (redata.data !== "") {
+								self.swipeList = JSON.parse(redata.data.content);
+							} else {
+								self.swipeList = []
+							}
+						},
+						function(redata) {
+							uni.showToast({
+								title: "出错了请重试",
+								duration: 1000,
+								image: "/static/no.png"
+							})
+						});
+				} else {
+					uni.showModal({
+						showCancel: false,
+						confirmText: "好吧",
+						title: '提示',
+						content: "需要登录",
+						success() {
+
+						}
+					});
+				}
+			}
+		}
+	}
+</script>
+<style>
+	/* 头条小程序组件内不能引入字体 */
+	/* #ifdef MP-TOUTIAO */
+	@font-face {
+		font-family: uniicons;
+		font-weight: normal;
+		font-style: normal;
+		src: url('~@/static/uni.ttf') format('truetype');
+	}
+
+	/* #endif */
+
+	page {
+		display: flex;
+		flex-direction: column;
+		box-sizing: border-box;
+		/* background-color: #efeff4; */
+		min-height: 100%;
+		height: auto;
+	}
+
+	view {
+		font-size: 14px;
+		line-height: inherit;
+	}
+
+	.cont {
+		flex: 1;
+		height: 45px;
+		line-height: 45px;
+		padding: 0 15px;
+		position: relative;
+		background-color: #fff;
+		font-size: 15px;
+		border-bottom-color: #F5F5F5;
+		border-bottom-width: 1px;
+		border-bottom-style: solid;
+	}
+
+
+	.button {
+		border-color: #e5e5e5;
+		border-style: solid;
+		border-width: 1px;
+		padding: 4px 8px;
+		border-radius: 4px;
+	}
+
+	.button-text {
+		font-size: 15px;
+	}
+
+	.uni-input-wrapper {
+		box-shadow: inset 0px 1px 1px rgba(0, 0, 0, 0.075), 0px 0px 10px rgba(0, 0, 0, 0.4);
+		border: 1px solid #eee;
+		border-radius: 55px;
+		width: 300px;
+		/* #ifndef APP-NVUE */
+		display: flex;
+		/* #endif */
+		padding: 8px 13px;
+		flex-direction: row;
+		flex-wrap: nowrap;
+		background-color: #FFFFFF;
+	}
+
+	.uni-input {
+		border: 1px solid #eee;
+		border-radius: 15px;
+		height: 50px;
+		line-height: 28px;
+		font-size: 20px;
+		padding: 0px;
+		flex: 1;
+		background-color: #FFFFFF;
+	}
+
+	.uni-icon {
+		margin-left: 10rpx;
+		margin-top: 10rpx;
+		font-family: uniicons;
+		font-size: 24px;
+		font-weight: normal;
+		font-style: normal;
+		width: 24px;
+		height: 24px;
+		color: #999999;
+	}
+</style>

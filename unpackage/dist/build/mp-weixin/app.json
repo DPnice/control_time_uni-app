@@ -1,0 +1,50 @@
+{
+  "pages": [
+    "pages/tabBar/daiban",
+    "pages/tabBar/tongji",
+    "pages/tabBar/wode",
+    "pages/tabBar/team",
+    "pages/tabBar/tow/xiangqing"
+  ],
+  "subPackages": [],
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "uni-app",
+    "navigationBarBackgroundColor": "#F8F8F8",
+    "backgroundColor": "#F8F8F8"
+  },
+  "tabBar": {
+    "color": "#7A7E83",
+    "selectedColor": "#007AFF",
+    "borderStyle": "black",
+    "backgroundColor": "#F8F8F8",
+    "list": [
+      {
+        "pagePath": "pages/tabBar/daiban",
+        "iconPath": "static/daiban.png",
+        "selectedIconPath": "static/daiban.png",
+        "text": "待办"
+      },
+      {
+        "pagePath": "pages/tabBar/tongji",
+        "iconPath": "static/tongji.png",
+        "selectedIconPath": "static/tongji.png",
+        "text": "统计"
+      },
+      {
+        "pagePath": "pages/tabBar/team",
+        "iconPath": "static/xiaozu.png",
+        "selectedIconPath": "static/xiaozu.png",
+        "text": "小组"
+      },
+      {
+        "pagePath": "pages/tabBar/wode",
+        "iconPath": "static/wode.png",
+        "selectedIconPath": "static/wode.png",
+        "text": "我的"
+      }
+    ]
+  },
+  "usingComponents": {},
+  "sitemapLocation": "sitemap.json"
+}

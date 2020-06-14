@@ -1,0 +1,481 @@
+<template>
+	<view>
+
+		<view class="cloud">
+			<image v-if="isDay" src="/static/day.png"></image>
+			<image v-if="!isDay" src="/static/night.png"></image>
+			<image src="../../static/cloud3.png" class="cloud3" mode="aspectFit"></image>
+			<image src="../../static/cloud2.png" class="cloud2" mode="aspectFit"></image>
+			<image src="../../static/cloud1.png" class="cloud1" mode="aspectFit"></image>
+			<template>
+				<image @click="house" v-if="ma == 1" src="../../static/ma1.png" class="house" mode="aspectFit"></image>
+				<image @click="house" v-else src="../../static/ma2.png" class="house" mode="aspectFit"></image>
+			</template>
+
+		</view>
+
+		<view class="tree" @click="jump">
+			<image :class="{btn:show,btn1:!show}" mode="aspectFit" class="tree" v-if="total>0 && total <=10" src="/static/tree/1.png"></image>
+			<image :class="{btn:show,btn1:!show}" mode="aspectFit" class="tree" v-if="total>10 && total <=20" src="/static/tree/2.png"></image>
+			<image :class="{btn:show,btn1:!show}" mode="aspectFit" class="tree" v-if="total>20 && total <=30" src="/static/tree/3.png"></image>
+			<image :class="{btn:show,btn1:!show}" mode="aspectFit" class="tree" v-if="total>30 && total <=40" src="/static/tree/4.png"></image>
+			<image :class="{btn:show,btn1:!show}" mode="aspectFit" class="tree" v-if="total>40 && total <=50" src="/static/tree/5.png"></image>
+			<image :class="{btn:show,btn1:!show}" mode="aspectFit" class="tree" v-if="total>50 && total <=60" src="/static/tree/6.png"></image>
+			<image :class="{btn:show,btn1:!show}" mode="aspectFit" class="tree" v-if="total>60 && total " src="/static/tree/7.png"></image>
+		</view>
+
+		<view class="content">
+			<uni-section :title="groupName" type="line"></uni-section>
+
+			<template v-if="groupUuid !== ''">
+				<scroll-view :scroll-top="scrollTop" scroll-y="true" class="scroll-Y" @scrolltoupper="upper" @scrolltolower="lower"
+				 @scroll="scroll">
+					<uni-swipe-action>
+						<uni-swipe-action-item v-for="(item,index) in swipeList" :options="item.options" :key="item.wxOpenId" @change="swipeChange"
+						 @click="swipeClickItem($event,item)">
+							<image style="margin-left:10rpx;margin-top: 5px; width:50px; height:50px;" :src="item.avatarUrl"></image>
+							<text style="margin-left: 20rpx;" class="cont">{{item.nickName}}</text>
+							<text style="position: fixed;margin-left: 480rpx;" class="cont">能量: {{item.groupIntegral}}</text>
+							<image v-if="index==0" style="width:45px; height: 45px; margin-right:10px;margin-top: 5px;" src="../../static/guanjun.png"></image>
+
+						</uni-swipe-action-item>
+					</uni-swipe-action>
+				</scroll-view>
+			</template>
+
+			<template v-if="groupUuid == ''">
+				<input class="uni-input" type="text" placeholder="输入邀请码加入小组吧" :value="groupUuidInput" @input="input1" />
+				<button style="width: 100%;" type="default" @click="joinGroup">加入小组</button>
+				<input class="uni-input" type="text" placeholder="输入名称创建小组" :value="groupNameInput" @input="input2" />
+				<button style="width: 100%;" type="default" @click="creatGroup">创建小组</button>
+			</template>
+
+		</view>
+	</view>
+</template>
+
+<script>
+	import {
+		AppModel
+	} from '../../models/app.js'
+	const appModel = new AppModel()
+	export default {
+		data() {
+			return {
+				groupNameInput: "",
+				groupUuidInput: "",
+				groupName: "赶紧创建小组吧！",
+				groupUuid: "",
+				ma: "1",
+				isDay: "",
+				total: 0,
+				show: false,
+				scrollTop: 0,
+				old: {
+					scrollTop: 0
+				},
+				swipeList: [],
+			}
+		},
+		onLoad() {
+			uni.setNavigationBarColor({
+				frontColor:  "#ffffff",
+				backgroundColor: "#93dffb"
+			})
+			
+			var aData = new Date();
+			var hour = aData.getHours()
+			if (hour > 7 && hour < 22) {
+				this.isDay = true;
+			} else {
+				this.isDay = false;
+			}
+		},
+		onShow() {
+			var user = uni.getStorageSync("userInfo")
+			console.log("user",user)
+			if (user !== "" ) {
+				if(user.groupUuid !== "" && user.groupUuid !== null){
+			
+					this.groupUuid = user.groupUuid;
+					this.groupList()
+				}else{
+					this.groupUuid = "";
+				}
+			} else {
+				this.groupUuid = "";
+			}
+
+			this.house()
+			// setInterval(function() {
+			// }, 1000);
+		},
+		methods: {
+			swipeChange() {
+				uni.vibrateShort({
+					success: function() {
+						console.log('success');
+					}
+				});
+				this.house()
+			},
+			input1: function(event) {
+				this.groupUuidInput = event.detail.value;
+			},
+			input2: function(event) {
+				this.groupNameInput = event.detail.value;
+			},
+			groupList() {
+				var that = this;
+				appModel.groupList(that.groupUuid,
+					function(redata) {
+						var list = redata.data.swipeList;
+						var total = 0;
+						for (var i = 0; i < list.length; i++) {
+							list[i].options = [{
+								"text": "详情"
+							}]
+							total = total + list[i].groupIntegral
+						}
+						that.total = total;
+						that.groupName = redata.data.treeGroup.slogan
+						that.swipeList = list;
+					},
+					function(redata) {
+						uni.showToast({
+							title: "获取列表失败",
+							duration: 2000,
+							image: "/static/no.png"
+						})
+					}
+				)
+
+			},
+			joinGroup() {
+				var userInfo = uni.getStorageSync("userInfo");
+				console.log("userInfo", userInfo)
+				if (userInfo == "") {
+					uni.showToast({
+						title: "请先登录",
+						duration: 2000,
+						icon: "none"
+					})
+
+				} else {
+					if (this.groupUuidInput == "") {
+						uni.showToast({
+							title: "不能为空哦",
+							duration: 2000,
+							icon: "none",
+							image: "/static/no.png"
+						})
+					} else {
+						var that = this;
+						appModel.joinGroup(userInfo.wxOpenId, that.groupUuidInput,
+							function(redata) {
+								if (redata.data !== "") {
+									uni.showToast({
+										title: "成功加入",
+										duration: 2000,
+										image: "/static/yes.png"
+									})
+									var user = uni.getStorageSync("userInfo")
+									user.groupUuid = redata.data;
+									uni.setStorageSync("userInfo", user)
+									that.groupUuid = redata.data
+									//小组成员
+									that.groupList()
+								} else {
+									uni.showToast({
+										title: "没有这个小组哦",
+										duration: 2000,
+										image: "/static/no.png"
+									})
+								}
+
+							},
+							function(redata) {
+								uni.showToast({
+									title: "加入失败重试也没用",
+									duration: 2000,
+									image: "/static/no.png"
+								})
+							}
+						)
+					}
+
+				}
+			},
+			creatGroup() {
+				var userInfo = uni.getStorageSync("userInfo");
+				console.log("userInfo", userInfo)
+				if (userInfo == "") {
+					uni.showToast({
+						title: "请先登录",
+						duration: 2000,
+						icon: "none"
+					})
+
+				} else {
+
+					var groupName = this.groupNameInput;
+					if (groupName == "") {
+						uni.showToast({
+							title: "不能为空哦",
+							duration: 2000,
+							icon: "none",
+							image: "/static/no.png"
+						})
+					} else {
+						var that = this;
+
+						appModel.creatGroup(userInfo.wxOpenId, groupName,
+							function(redata) {
+								that.groupUuid = redata.data;
+								uni.showModal({
+									showCancel: false,
+									confirmText: "复制",
+									title: '小组邀请码，请复制',
+									content: redata.data,
+									success() {
+										var user = uni.getStorageSync("userInfo")
+										user.groupUuid = redata.data;
+										uni.setStorageSync("userInfo", user)
+										that.groupUuid = user.groupUuid;
+										console.log("小组邀请码", redata.data)
+										uni.setClipboardData({
+											data: redata.data,
+											fail: function() {
+												console.log('复制失败');
+											}
+										});
+
+									}
+								});
+								that.groupList()
+							},
+							function(redata) {
+								uni.showToast({
+									title: "创建失败重试也没用",
+									duration: 2000,
+									image: "/static/no.png"
+								})
+							}
+						)
+					}
+
+				}
+
+
+			},
+			house() {
+				if (this.ma == "1") {
+					this.ma = "2";
+				} else {
+					this.ma = "1";
+				}
+			},
+			jump() {
+				this.show = !this.show;
+			},
+			swipeClickItem(e, item) {
+				let {
+					content
+				} = e
+
+				console.log("当前选中用户id", item.wxOpenId);
+				console.log("当前选中用户", item.nickName);
+				console.log("当前选中用户是否可以查看", item.look);
+				if (item.look == 1) {
+					uni.showModal({
+						showCancel: false,
+						confirmText: "好吧",
+						title: '暂无权限',
+						content: item.nickName + "不允许别人偷看哦🙈🙈🙈",
+						success() {
+
+						}
+					});
+
+
+				} else {
+					var wxOpenId = item.wxOpenId;
+					var nickName = item.nickName;
+					uni.navigateTo({
+						url: "tow/xiangqing?wxOpenId=" + wxOpenId + "&nickName=" + nickName
+					})
+				}
+
+			},
+			getIndexById(id) {
+				for (var i = 0; i < this.swipeList.length; i++) {
+					if (this.swipeList[i].id == id) return i;
+				}
+				return -1;
+			},
+			upper: function(e) {
+				console.log(e)
+			},
+			lower: function(e) {
+				console.log(e)
+			},
+			scroll: function(e) {
+				console.log(e)
+				this.old.scrollTop = e.detail.scrollTop
+			},
+			goTop: function(e) {
+				this.scrollTop = this.old.scrollTop
+				this.$nextTick(function() {
+					this.scrollTop = 0
+				});
+
+			}
+		}
+
+	}
+</script>
+
+<style>
+	.uni-input {
+		border: 1px solid #eee;
+		border-radius: 15px;
+		height: 50px;
+		line-height: 28px;
+		font-size: 20px;
+		padding: 0px;
+		flex: 1;
+		background-color: #FFFFFF;
+	}
+
+	.content {
+		position: initial;
+		margin-top: 430rpx;
+	}
+
+	.scroll-Y {
+		height: 700rpx;
+	}
+
+	.scroll-view-item {
+		height: 300rpx;
+		line-height: 300rpx;
+		text-align: center;
+		font-size: 36rpx;
+	}
+
+	.scroll-view-item_H {
+		display: inline-block;
+		width: 100%;
+		height: 300rpx;
+		line-height: 300rpx;
+		text-align: center;
+		font-size: 36rpx;
+	}
+
+	image {
+		width: 100%;
+	}
+
+
+	.tree {
+		z-index: 5;
+		width: 100%;
+		/* top: -220rpx; */
+		position: fixed;
+	}
+
+	.btn {
+		height: 600px;
+		/* scale: 0.5; */
+		margin-top: 0rpx;
+		transition-duration: 1s;
+	}
+
+	.btn1 {
+		margin-top: -10rpx;
+		transition-duration: 1s;
+	}
+
+	.cont {
+		flex: 1;
+		height: 60px;
+		line-height: 60px;
+		padding: 0 0px;
+		position: relative;
+		background-color: #fff;
+		font-size: 15px;
+		border-bottom-color: #fff;
+		border-bottom-width: 2px;
+		border-bottom-style: solid;
+	}
+
+	.house {
+		margin-top: 300rpx;
+		margin-left: 110rpx;
+		width: 50px;
+		height: 50px;
+		position: fixed;
+	}
+
+	.cloud {
+		z-index: 4;
+		width: 100%;
+		/* top: -220rpx; */
+		position: fixed;
+	}
+
+	.cloud1 {
+		margin-top: 60rpx;
+		position: fixed;
+		width: 120px;
+		height: 60px;
+		animation: mymove 10s infinite;
+		-webkit-animation: mymove 10s infinite;
+		/*Safari and Chrome*/
+	}
+
+	.cloud2 {
+		margin-top: 55rpx;
+		position: fixed;
+		width: 100px;
+		height: 50px;
+		animation: mymove 20s infinite;
+		-webkit-animation: mymove 20s infinite;
+		/*Safari and Chrome*/
+
+	}
+
+	.cloud3 {
+		/* top: 220rpx; */
+		margin-top: 140rpx;
+		position: fixed;
+		width: 50px;
+		height: 25px;
+		animation: mymove 30s infinite;
+		-webkit-animation: mymove 30s infinite;
+		/*Safari and Chrome*/
+	}
+
+	@keyframes mymove {
+		from {
+			left: -120px;
+		}
+
+		to {
+			left: 800rpx;
+		}
+	}
+
+	@-webkit-keyframes mymove
+
+	/*Safari and Chrome*/
+		{
+		from {
+			left: 0px;
+		}
+
+		to {
+			left: 200px;
+		}
+	}
+</style>

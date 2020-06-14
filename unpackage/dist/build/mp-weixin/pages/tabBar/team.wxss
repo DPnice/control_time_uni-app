@@ -1,0 +1,11 @@
+view,
+swiper-item,
+scroll-view{display:-webkit-box;display:-webkit-flex;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-webkit-flex-direction:column;flex-direction:column;-webkit-flex-shrink:0;flex-shrink:0;-webkit-box-flex:0;-webkit-flex-grow:0;flex-grow:0;-webkit-flex-basis:auto;flex-basis:auto;-webkit-box-align:stretch;-webkit-align-items:stretch;align-items:stretch;-webkit-align-content:flex-start;align-content:flex-start}view,
+image,
+input,
+scroll-view,
+swiper,
+swiper-item,
+text,
+textarea,
+video{position:relative;border:0 solid #000;box-sizing:border-box}swiper-item{position:absolute}.uni-input{border:1px solid #eee;border-radius:15px;height:50px;line-height:28px;font-size:20px;padding:0;-webkit-box-flex:1;-webkit-flex:1;flex:1;background-color:#fff}.content{position:static;margin-top:430rpx}.scroll-Y{height:700rpx}.scroll-view-item{height:300rpx;line-height:300rpx;text-align:center;font-size:36rpx}.scroll-view-item_H{display:inline-block;width:100%;height:300rpx;line-height:300rpx;text-align:center;font-size:36rpx}image{width:100%}.tree{z-index:5;width:100%;position:fixed}.btn{height:600px;margin-top:0rpx;-webkit-transition-duration:1s;transition-duration:1s}.btn1{margin-top:-10rpx;-webkit-transition-duration:1s;transition-duration:1s}.cont{-webkit-box-flex:1;-webkit-flex:1;flex:1;height:60px;line-height:60px;padding:0 0;position:relative;background-color:#fff;font-size:15px;border-bottom-color:#fff;border-bottom-width:2px;border-bottom-style:solid}.house{margin-top:300rpx;margin-left:110rpx;width:50px;height:50px;position:fixed}.cloud{z-index:4;width:100%;position:fixed}.cloud1{margin-top:60rpx;position:fixed;width:120px;height:60px;animation:mymove 10s infinite;-webkit-animation:mymove 10s infinite}.cloud2{margin-top:55rpx;position:fixed;width:100px;height:50px;animation:mymove 20s infinite;-webkit-animation:mymove 20s infinite}.cloud3{margin-top:140rpx;position:fixed;width:50px;height:25px;animation:mymove 30s infinite;-webkit-animation:mymove 30s infinite}@keyframes mymove{from{left:-120px}to{left:800rpx}}@-webkit-keyframes mymove{from{left:0}to{left:200px}}

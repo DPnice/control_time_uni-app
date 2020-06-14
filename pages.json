@@ -1,0 +1,70 @@
+{
+	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+
+		{
+			"path": "pages/tabBar/daiban",
+			"style": {
+				"navigationBarTitleText": "待办"
+			}
+		},
+		{
+			"path": "pages/tabBar/tongji",
+			"style": {
+				"navigationBarTitleText": "统计"
+			}
+		},
+		{
+			"path": "pages/tabBar/wode",
+			"style": {
+				"navigationBarTitleText": "我的"
+			}
+		},
+		{
+			"path": "pages/tabBar/team",
+			"style": {
+				"navigationBarTitleText": "小组"
+			}
+		},
+		{
+			"path": "pages/tabBar/tow/xiangqing",
+			"style": {
+				"navigationBarTitleText": "详情"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "uni-app",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
+	},
+	"tabBar": {
+		"color": "#7A7E83",
+		"selectedColor": "#007AFF",
+		"borderStyle": "black",
+		"backgroundColor": "#F8F8F8",
+		"list": [{
+				"pagePath": "pages/tabBar/daiban",
+				"iconPath": "static/daiban.png",
+				"selectedIconPath": "static/daiban.png",
+				"text": "待办"
+			},
+			{
+				"pagePath": "pages/tabBar/tongji",
+				"iconPath": "static/tongji.png",
+				"selectedIconPath": "static/tongji.png",
+				"text": "统计"
+			},{
+				"pagePath": "pages/tabBar/team",
+				"iconPath": "static/xiaozu.png",
+				"selectedIconPath": "static/xiaozu.png",
+				"text": "小组"
+			}, {
+				"pagePath": "pages/tabBar/wode",
+				"iconPath": "static/wode.png",
+				"selectedIconPath": "static/wode.png",
+				"text": "我的"
+			}
+		]
+	}
+}

@@ -1,0 +1,337 @@
+<template>
+	<view>
+		<view class="uni-padding-wrap">
+		</view>
+		<picker-view v-if="visible" :indicator-style="indicatorStyle" :value="value" @change="bindChange">
+			<picker-view-column>
+				<view class="item" v-for="(item,index) in years" :key="index">{{item}}年</view>
+			</picker-view-column>
+			<picker-view-column>
+				<view class="item" v-for="(item,index) in months" :key="index">{{item}}月</view>
+			</picker-view-column>
+			<picker-view-column>
+				<view class="item" v-for="(item,index) in days" :key="index">{{item}}日</view>
+			</picker-view-column>
+		</picker-view>
+
+		<template>
+			<view class="uni-flex uni-row">
+				<canvas canvas-id="canvasArcbar1" id="canvasArcbar1" class="charts3 flex-item"></canvas>
+
+				<div class="flex-item" id="total">
+					<span style="font-size: 20rpx;width: 40%;">已经坚持</span>
+					<span style="width: 40%;">{{totalDay}}</span>
+					<span style="font-size: 20rpx;width: 30%;">天啦</span>
+				</div>
+			</view>
+		</template>
+
+		<template>
+			<view class="qiun-columns">
+				<view class="qiun-charts">
+					<canvas canvas-id="canvasArea" id="canvasArea" class="charts" @touchstart="touchArea"></canvas>
+				</view>
+			</view>
+		</template>
+	</view>
+
+
+
+
+</template>
+
+<script>
+	import {
+		AppModel
+	} from '../../models/app.js'
+	const appModel = new AppModel()
+
+	import uCharts from '@/components/u-charts/u-charts.js';
+	var _self;
+	var canvaArcbar1;
+	var canvaArea = null;
+
+	export default {
+		data() {
+			const date = new Date()
+			const years = []
+			const year = date.getFullYear()
+			const months = []
+			const month = date.getMonth() + 1
+			const days = []
+			const day = date.getDate()
+
+			for (let i = 1990; i <= date.getFullYear(); i++) {
+				years.push(i)
+			}
+
+			for (let i = 1; i <= 12; i++) {
+				months.push(i)
+			}
+
+			for (let i = 1; i <= 31; i++) {
+				days.push(i)
+			}
+			return {
+				cWidth: '',
+				cHeight: '',
+				pixelRatio: 1,
+				totalDay: "0",
+				cWidth3: '', //圆弧进度图
+				cHeight3: '', //圆弧进度图
+				arcbarWidth: '', //圆弧进度图，进度条宽度,此设置可使各端宽度一致
+				pixelRatio: 1,
+				years,
+				year,
+				months,
+				month,
+				days,
+				day,
+				value: [9999, month - 1, day - 1],
+				/**
+				 * 解决动态设置indicator-style不生效的问题
+				 */
+				visible: true,
+				indicatorStyle: `height: ${Math.round(uni.getSystemInfoSync().screenWidth/(750/100))}px;`
+			}
+		},
+		methods: {
+			bindChange(e) {
+				const val = e.detail.value
+				this.year = this.years[val[0]]
+				this.month = this.months[val[1]]
+				this.day = this.days[val[2]]
+				this.getServerData();
+			},
+			getServerData() {
+				console.log("date", this.year, this.month, this.day)
+				let Arcbar1 = {
+					series: []
+				};
+				let Area = {
+					categories: [],
+					series: []
+				};
+
+				var userInfo = uni.getStorageSync("userInfo")
+				if (userInfo !== "") {
+					var that = this
+					appModel.statistics(userInfo.wxOpenId, this.year, this.month, this.day,
+						function(redata) {
+
+							Arcbar1.series = redata.data.arcbar1.series
+							Area.categories = redata.data.area.categories
+							Area.series = redata.data.area.series
+							that.totalDay = redata.data.totalDay
+
+							_self.showArcbar("canvasArcbar1", Arcbar1);
+							_self.showArea("canvasArea", Area);
+						},
+						function(redata) {
+							uni.showToast({
+								title: "统计失败重试也没用的那种",
+								duration: 2000,
+								image: "/static/no.png"
+							})
+						}
+					)
+
+				}
+
+			},
+			showArcbar(canvasId, chartData) {
+				canvaArcbar1 = new uCharts({
+					$this: _self,
+					canvasId: canvasId,
+					type: 'arcbar',
+					fontSize: 11,
+					legend: {
+						show: false
+					},
+					background: '#FFFFFF',
+					pixelRatio: _self.pixelRatio,
+					series: chartData.series,
+					animation: true,
+					width: _self.cWidth3 * _self.pixelRatio,
+					height: _self.cHeight3 * _self.pixelRatio,
+					dataLabel: true,
+					title: {
+						name: Math.round(chartData.series[0].data * 100) + '%', //这里我自动计算了，您可以直接给任意字符串
+						color: chartData.series[0].color,
+						fontSize: 25 * _self.pixelRatio
+					},
+					subtitle: {
+						name: "完成率", //这里您可以直接给任意字符串
+						color: '#666666',
+						fontSize: 15 * _self.pixelRatio
+					},
+					extra: {
+						arcbar: {
+							type: 'default',
+							width: _self.arcbarWidth * _self.pixelRatio, //圆弧的宽度
+						}
+					}
+				});
+			},
+			showArea(canvasId, chartData) {
+				canvaArea = new uCharts({
+					$this: _self,
+					canvasId: canvasId,
+					type: 'area',
+					fontSize: 11,
+					legend: {
+						show: true,
+						// position:'top',
+						float: 'center',
+						itemGap: 30,
+						padding: 5,
+						lineHeight: 18,
+						margin: 0,
+					},
+					dataLabel: false,
+					dataPointShape: true,
+					background: '#FFFFFF',
+					pixelRatio: _self.pixelRatio,
+					categories: chartData.categories,
+					series: chartData.series,
+					animation: true,
+					xAxis: {
+						// disableGrid: true,
+						// disabled:true,
+						type: 'grid',
+						gridColor: '#CCCCCC',
+						gridType: 'dash',
+						dashLength: 8,
+						boundaryGap: 'justify',
+						scrollShow: true,
+						scrollAlign: 'left'
+					},
+					yAxis: {
+						// disableGrid:true,
+						// disabled:true,
+						gridType: 'dash',
+						gridColor: '#CCCCCC',
+						dashLength: 8,
+						splitNumber: 5,
+					},
+					width: _self.cWidth * _self.pixelRatio,
+					height: _self.cHeight * _self.pixelRatio,
+					extra: {
+						area: {
+							type: 'straight',
+							type: 'curve',
+							opacity: 0.9,
+							addLine: true,
+							width: 1
+						}
+					}
+				});
+
+			},
+			touchArea(e) {
+				canvaArea.showToolTip(e, {
+					format: function(item, category) {
+						return category + ' ' + item.name + ':' + item.data
+					}
+				});
+			}
+		},
+		onLoad() {
+			
+		},
+		onReady() {
+			console.log("date", this.year, this.month, this.day)
+		},
+		onShow() {
+			_self = this;
+			this.cWidth3 = uni.upx2px(250); //这里要与样式的宽高对应
+			this.cHeight3 = uni.upx2px(250); //这里要与样式的宽高对应
+			this.arcbarWidth = uni.upx2px(24);
+			this.cWidth = uni.upx2px(750);
+			this.cHeight = uni.upx2px(500);
+			this.getServerData();
+		}
+	}
+</script>
+
+<style>
+	#total {
+		display: inline;
+		font-weight: bold;
+		font-size: 100rpx;
+		font-family: 'Share Tech Mono', monospace;
+		color: #49484b;
+		text-shadow: 0px 8px 2px #c8c1c1;
+		/* text-shadow: 0 0 20px #0aafe6, 0 0 20px rgba(10, 175, 230, 0); */
+	}
+
+	.qiun-charts {
+		padding-top: 20rpx;
+		width: 100%;
+		height: 500upx;
+		background-color: #FFFFFF;
+	}
+
+	.charts {
+		width: 100%;
+		height: 500upx;
+		background-color: #FFFFFF;
+	}
+
+	/*样式的width和height一定要与定义的cWidth和cHeight相对应*/
+	.qiun-charts3 {
+		padding-top: 80rpx;
+		width: 50%;
+		height: 250upx;
+		background-color: #FFFFFF;
+		position: relative;
+	}
+
+	.charts3 {
+		position: relative;
+		width: 250upx;
+		height: 250upx;
+		background-color: #FFFFFF;
+	}
+
+	picker-view {
+		width: 100%;
+		height: 300rpx;
+		margin-top: 20rpx;
+	}
+
+	.item {
+		line-height: 100rpx;
+		text-align: center;
+	}
+
+	.flex-item {
+		margin: 50rpx;
+		width: 250upx;
+		height: 250upx;
+		text-align: center;
+		line-height: 200rpx;
+	}
+
+	.uni-flex {
+		background-color: #FFFFFF;
+		display: flex;
+		flex-direction: row;
+	}
+
+	.uni-flex-item {
+		flex: 1;
+	}
+
+	.uni-row {
+		flex-direction: row;
+	}
+
+	.uni-column {
+		flex-direction: column;
+	}
+
+	body {
+		background-color: #FFFFFF;
+	}
+</style>
